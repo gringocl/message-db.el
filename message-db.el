@@ -59,21 +59,21 @@
 
 (defun message-db--display-buffer (name content)
   "Display CONTENT in buffer with NAME."
-  (with-current-buffer (get-buffer-create name)
-    (let ((inhibit-read-only t))
+  (let ((buf (get-buffer-create name)))
+    (with-current-buffer buf
+      (setq buffer-read-only nil)
       (erase-buffer)
-      (message-db-mode)  ;; Use message-db-mode instead of sql-mode
+      (message-db-mode)
       (insert content)
-      ;; Make headers read-only and cursor intangible
       (save-excursion
         (goto-char (point-min))
         (let ((end (save-excursion (forward-line 2) (point))))
           (add-text-properties (point) end
                              '(read-only t intangible t))))
-      ;; Display in new frame and select it
+      (setq buffer-read-only t)
       (let ((frame (make-frame)))
         (select-frame-set-input-focus frame)
-        (switch-to-buffer (current-buffer))))))
+        (switch-to-buffer buf))))))
 
 ;; Interactive commands
 
