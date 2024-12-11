@@ -73,7 +73,7 @@
       (setq buffer-read-only t)
       (let ((frame (make-frame)))
         (select-frame-set-input-focus frame)
-        (switch-to-buffer buf))))))
+        (switch-to-buffer buf)))))
 
 ;; Interactive commands
 
