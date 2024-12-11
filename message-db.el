@@ -2,11 +2,11 @@
 
 ;; Copyright (C) 2024 Your Name
 ;;
-;; Author: Your Name <your.email@example.com>
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "27.1") (transient "0.4.0"))
+;; Author: Miles Starkenburg <milesstarkenburg@gmail.com>
 ;; Keywords: tools
-;; URL: https://github.com/yourusername/message-db.el
+;; URL: https://github.com/gringocl/message-db.el
 
 ;;; Commentary:
 ;; This package provides an Emacs interface for interacting with message-db
