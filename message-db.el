@@ -3,7 +3,7 @@
 ;; Copyright (C) 2024 Your Name
 ;;
 ;; Author: Miles Starkenburg <milesstarkenburg@gmail.com>
-;; Version: 0.2.0
+;; Version: 0.2.1
 ;; Package-Requires: (transient)
 ;; Keywords: tools
 ;; URL: https://github.com/gringocl/message-db.el
