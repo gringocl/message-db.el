@@ -3,8 +3,8 @@
 ;; Copyright (C) 2024 Your Name
 ;;
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "27.1") (transient "0.4.0"))
 ;; Author: Miles Starkenburg <milesstarkenburg@gmail.com>
+;; Package-Requires: (transient)
 ;; Keywords: tools
 ;; URL: https://github.com/gringocl/message-db.el
 
@@ -16,6 +16,7 @@
 ;;; Code:
 
 (require 'transient)
+(require 'message-db-mode)
 
 (defgroup message-db nil
   "Interface for message-db."
