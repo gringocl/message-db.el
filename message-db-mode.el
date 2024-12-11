@@ -19,6 +19,44 @@
 
 \\{message-db-mode-map}")
 
+(defun message-db--format-active-streams (results)
+  "Format RESULTS of active streams query for display."
+  (with-temp-buffer
+    (insert results)
+    (goto-char (point-min))
+    (let ((table (make-vector 2 0))  ; For column widths
+          formatted-lines)
+      ;; First pass: collect maximum column widths
+      (while (not (eobp))
+        (let ((line (buffer-substring (line-beginning-position) (line-end-position))))
+          (when (string-match "^\\([^|]+\\)|\\s-*\\([0-9]+\\)" line)
+            (let ((stream (match-string 1 line))
+                  (pos (match-string 2 line)))
+              (aset table 0 (max (aref table 0) (length stream)))
+              (aset table 1 (max (aref table 1) (length pos))))))
+        (forward-line 1))
+
+      ;; Second pass: format lines
+      (goto-char (point-min))
+      (while (not (eobp))
+        (let ((line (buffer-substring (line-beginning-position) (line-end-position))))
+          (when (string-match "^\\([^|]+\\)|\\s-*\\([0-9]+\\)" line)
+            (let ((stream (string-trim (match-string 1 line)))
+                  (pos (string-trim (match-string 2 line))))
+              (push (format (format "%%-%ds  %%%ds"
+                                  (aref table 0)
+                                  (aref table 1))
+                          stream pos)
+                    formatted-lines))))
+        (forward-line 1))
+
+      ;; Return formatted string
+      (concat "Stream Name" (make-string (- (aref table 0) 10) ? )
+              "  Latest Position\n"
+              (make-string (aref table 0) ?=) "  "
+              (make-string (aref table 1) ?=) "\n"
+              (mapconcat #'identity (nreverse formatted-lines) "\n")))))
+
 (defun message-db-inspect-at-point ()
   "Inspect the message at point in detail."
   (interactive)
@@ -28,6 +66,20 @@
                   (match-string 1 line))))
       (message-db--display-message id)
     (user-error "No message at point")))
+
+(defun message-db--stream-at-point ()
+  "Get stream name at point in active streams buffer."
+  (save-excursion
+    (beginning-of-line)
+    (when (looking-at "\\([^0-9 ][^ ]+\\)\\s-+[0-9]+")
+      (match-string-no-properties 1))))
+
+(defun message-db-inspect-stream-at-point ()
+  "Show messages for the stream at point."
+  (interactive)
+  (if-let ((stream (message-db--stream-at-point)))
+      (message-db-print-messages stream)
+    (user-error "No stream at point")))
 
 (defun message-db--display-message (id)
   "Display detailed view of message with ID."
@@ -120,5 +172,33 @@
     (with-current-buffer buf
       (let ((inhibit-read-only t))
         (erase-buffer)))))
+(defun message-db-active-streams ()
+  "Display the 25 most recently active message streams."
+  (interactive)
+  (let* ((query "SELECT DISTINCT stream_name, MAX(global_position) as latest_position
+                FROM messages
+                GROUP BY stream_name
+                ORDER BY max(global_position) DESC
+                LIMIT 25")
+         (results (message-db--execute-query query))
+         (formatted (message-db--format-active-streams results)))
+    (with-current-buffer (get-buffer-create "*message-db-active-streams*")
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (message-db-mode)
+        (insert formatted)
+        (goto-char (point-min))
+        (forward-line 2)  ; Skip header
+        ;; Make stream names clickable
+        (while (not (eobp))
+          (when (message-db--stream-at-point)
+            (put-text-property (line-beginning-position)
+                             (line-end-position)
+                             'mouse-face 'highlight))
+          (forward-line 1))
+        ;; Add key bindings
+        (local-set-key (kbd "RET") #'message-db-inspect-stream-at-point)
+        (local-set-key [mouse-1] #'message-db-inspect-stream-at-point)
+        (display-buffer (current-buffer))))))
 
 (provide 'message-db-mode)

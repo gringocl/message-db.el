@@ -106,6 +106,19 @@
                                       (if category
                                           (format "SELECT COUNT(*) FROM messages WHERE category(stream_name) LIKE '%%%s%%';" category)
                                         "SELECT COUNT(*) FROM messages;"))))))
+(defun message-db-active-streams ()
+  "Display the 25 most recently active message streams.
+Shows stream names and their latest message position."
+  (interactive)
+  (let ((query "SELECT DISTINCT stream_name, MAX(global_position) as latest_position
+                FROM messages
+                GROUP BY stream_name
+                ORDER BY max(global_position) DESC
+                LIMIT 25"))
+    (message-db--display-buffer "*message-db-active-streams*"
+                              (concat "Active Message Streams (Last 25)\n"
+                                     "==============================\n\n"
+                                     (message-db--execute-query query)))))
 
 (defun message-db-stream-summary (&optional stream-name)
   "Show stream summary, optionally filtered by STREAM-NAME."
@@ -237,13 +250,20 @@ Optional STREAM-NAME, TYPE, METADATA, and number of INSTANCES."
   "Command dispatcher for message-db operations."
   :value '("--instances=1" "--cycles=1000")
   ["Parameters"
-   ("-s" "Stream name" "--stream=" :reader (lambda (_prompt _init) (completing-read "Stream name: " (split-string (message-db--execute-query "SELECT DISTINCT stream_name FROM messages;")))))
-   ("-t" "Type" "--type=" :reader (lambda (_prompt _init) (completing-read "Type: " (split-string (message-db--execute-query "SELECT DISTINCT type FROM messages;")))))
+   ("-s" "Stream name" "--stream="
+    :reader (lambda (_prompt _init)
+              (completing-read "Stream name: " (split-string
+                                                (message-db--execute-query "SELECT DISTINCT stream_name FROM messages;")))))
+   ("-t" "Type" "--type="
+    :reader (lambda (_prompt _init)
+              (completing-read "Type: " (split-string
+                                         (message-db--execute-query "SELECT DISTINCT type FROM messages;")))))
    ("-c" "Category" "--category=")
    ("-m" "Metadata" "--metadata=")
    ("-i" "Instances" "--instances=")
    ("-n" "Cycles" "--cycles=")]
   ["Views"
+   ("a" "Active streams" message-db-active-streams)
    ("m" "Print messages" message-db-print-messages)
    ("v" "Print version" message-db-print-version)
    ("c" "Category type summary" message-db-category-type-summary)
